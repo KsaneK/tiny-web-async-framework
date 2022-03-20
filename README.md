@@ -1,0 +1,1 @@
+Web server created for educational purposes

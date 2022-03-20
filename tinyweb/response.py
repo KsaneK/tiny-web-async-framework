@@ -27,11 +27,12 @@ class StatusCode(enum.Enum):
     def get_name(self):
         return self.name.replace("_", " ")
 
-
-class DefaultResponses:
-    NOT_FOUND = f"HTTP/1.1 {StatusCode.NOT_FOUND.value} " \
-                f"{StatusCode.NOT_FOUND.get_name()}{2 * LINE_END}" \
-                f"NOT FOUND!".encode(ENCODING)
+    def generate_default_response(self):
+        return (
+            f"{HTTP_VERSION} {self.value} {self.get_name()}"
+            f"{2 * LINE_END}"
+            f"{self.get_name()}"
+        ).encode(ENCODING)
 
 
 class Response:

@@ -4,7 +4,7 @@ from typing import List
 from tinyweb.constants import ENCODING
 from tinyweb.exceptions import PageNotFoundException
 from tinyweb.request import Request, RequestMethod
-from tinyweb.response import Response, DefaultResponses
+from tinyweb.response import Response, StatusCode
 from tinyweb.routes import Routes
 
 
@@ -39,7 +39,9 @@ class TinyWeb:
             response = Response.from_result(func(request))
             writer.write(response.generate())
         except PageNotFoundException:
-            writer.write(DefaultResponses.NOT_FOUND)
+            writer.write(StatusCode.NOT_FOUND.generate_default_response())
+        except Exception:
+            writer.write(StatusCode.INTERNAL_SERVER_ERROR.generate_default_response())
 
         writer.close()
 

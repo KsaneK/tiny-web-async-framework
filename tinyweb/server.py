@@ -1,5 +1,7 @@
 import asyncio
 
+from tinyweb.request import Request
+
 
 class TinyWeb:
     READ_CHUNK_SIZE = 16 * 1024
@@ -20,9 +22,17 @@ class TinyWeb:
             await self._server.serve_forever()
 
     async def _handle_request(self, reader, writer):
-        request = ""
-        while not request.endswith("\r\n\r\n"):
-            request += (await reader.read(TinyWeb.READ_CHUNK_SIZE)).decode("utf-8")
+        request_raw = ""
+        while not request_raw.endswith("\r\n\r\n"):
+            request_raw += (await reader.read(TinyWeb.READ_CHUNK_SIZE)).decode("utf-8")
+
+        request = Request.parse(raw_request=request_raw)
+        print(request)
 
         writer.write("HTTP/1.1 200 OK\r\n\r\n<h1>Hello World!</h1>".encode("utf-8"))
         writer.close()
+
+
+if __name__ == "__main__":
+    s = TinyWeb("localhost", 12345)
+    s.run()

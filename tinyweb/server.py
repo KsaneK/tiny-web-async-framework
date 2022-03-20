@@ -1,6 +1,11 @@
 import asyncio
+from typing import List
 
-from tinyweb.request import Request
+from tinyweb.constants import ENCODING
+from tinyweb.exceptions import PageNotFoundException
+from tinyweb.request import Request, RequestMethod
+from tinyweb.response import Response, DefaultResponses
+from tinyweb.routes import Routes
 
 
 class TinyWeb:
@@ -13,6 +18,8 @@ class TinyWeb:
         self._server = None
         self._loop = None
 
+        self._routes = Routes()
+
     def run(self):
         asyncio.run(self._run_server())
 
@@ -24,15 +31,22 @@ class TinyWeb:
     async def _handle_request(self, reader, writer):
         request_raw = ""
         while not request_raw.endswith("\r\n\r\n"):
-            request_raw += (await reader.read(TinyWeb.READ_CHUNK_SIZE)).decode("utf-8")
+            request_raw += (await reader.read(TinyWeb.READ_CHUNK_SIZE)).decode(ENCODING)
 
-        request = Request.parse(raw_request=request_raw)
-        print(request)
+        try:
+            request = Request.parse(raw_request=request_raw)
+            func = self._routes.get_route(request.path, request.method)
+            response = Response.from_result(func(request))
+            writer.write(response.generate())
+        except PageNotFoundException:
+            writer.write(DefaultResponses.NOT_FOUND)
 
-        writer.write("HTTP/1.1 200 OK\r\n\r\n<h1>Hello World!</h1>".encode("utf-8"))
         writer.close()
 
+    def route(self, path: str, methods: List[str]):
+        def decorator(func):
+            for method in methods:
+                self._routes.add_route(path, RequestMethod(method), func)
+            return func
 
-if __name__ == "__main__":
-    s = TinyWeb("localhost", 12345)
-    s.run()
+        return decorator

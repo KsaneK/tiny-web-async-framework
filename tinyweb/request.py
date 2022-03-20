@@ -19,6 +19,14 @@ class Request:
         self._headers = headers
         self._body = body
 
+    @property
+    def path(self):
+        return self._path
+
+    @property
+    def method(self):
+        return self._method
+
     @staticmethod
     def parse(raw_request: str):
         headers = {}
@@ -29,12 +37,7 @@ class Request:
             header_key, header_value = header_line.split(": ", maxsplit=1)
             headers[header_key] = header_value
 
-        return Request(
-            path=path,
-            method=RequestMethod(method.upper()),
-            headers=headers,
-            body=body
-        )
+        return Request(path=path, method=RequestMethod(method.upper()), headers=headers, body=body)
 
     def __str__(self):
         return f"Request({self._method} {self._path})"

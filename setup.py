@@ -2,7 +2,7 @@
 
 from distutils.core import setup
 
-requirements = []
+requirements = ["Jinja2~=3.0.3"]
 
 dev_requirements = ["black~=22.1.0", "flake8~=4.0.1", "pytest~=6.2.5", "pytest-mock~=3.6.1"]
 

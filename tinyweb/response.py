@@ -27,13 +27,6 @@ class StatusCode(enum.Enum):
     def get_name(self):
         return self.name.replace("_", " ")
 
-    def generate_default_response(self):
-        return (
-            f"{HTTP_VERSION} {self.value} {self.get_name()}"
-            f"{2 * LINE_END}"
-            f"{self.get_name()}"
-        ).encode(ENCODING)
-
 
 class Response:
     def __init__(self, status_code: StatusCode, headers: Dict[str, str], body: str):

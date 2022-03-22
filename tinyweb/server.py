@@ -1,11 +1,13 @@
 import asyncio
+import os
 from typing import List
 
-from tinyweb.constants import ENCODING
+import tinyweb.constants as C
 from tinyweb.exceptions import PageNotFoundException
 from tinyweb.request import Request, RequestMethod
 from tinyweb.response import Response, StatusCode
 from tinyweb.routes import Routes
+from tinyweb.utils import generate_error_message
 
 
 class TinyWeb:
@@ -30,8 +32,8 @@ class TinyWeb:
 
     async def _handle_request(self, reader, writer):
         request_raw = ""
-        while not request_raw.endswith("\r\n\r\n"):
-            request_raw += (await reader.read(TinyWeb.READ_CHUNK_SIZE)).decode(ENCODING)
+        while not request_raw.endswith(2 * C.LINE_END):
+            request_raw += (await reader.read(TinyWeb.READ_CHUNK_SIZE)).decode(C.ENCODING)
 
         try:
             request = Request.parse(raw_request=request_raw)
@@ -39,10 +41,9 @@ class TinyWeb:
             response = Response.from_result(func(request))
             writer.write(response.generate())
         except PageNotFoundException:
-            writer.write(StatusCode.NOT_FOUND.generate_default_response())
+            writer.write(generate_error_message(StatusCode.NOT_FOUND))
         except Exception:
-            writer.write(StatusCode.INTERNAL_SERVER_ERROR.generate_default_response())
-
+            writer.write(generate_error_message(StatusCode.INTERNAL_SERVER_ERROR))
         writer.close()
 
     def route(self, path: str, methods: List[str]):

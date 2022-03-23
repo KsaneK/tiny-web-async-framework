@@ -53,15 +53,7 @@ class TinyWeb:
             response = generate_error_message(StatusCode.INTERNAL_SERVER_ERROR)
             status = StatusCode.INTERNAL_SERVER_ERROR
 
-        self.logger.log(
-            C.REQUEST_LOG_TEMPLATE.format(
-                method=request.method.value,
-                path=request.path,
-                http_version=request.http_version,
-                status_code=status.value,
-            ),
-            status_code=status.value,
-        )
+        self.logger.log(request=request, status_code=status.value)
 
         writer.write(response)
         writer.close()

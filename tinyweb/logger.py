@@ -4,6 +4,9 @@ from functools import partial
 
 import termcolor as termcolor
 
+import tinyweb.constants as C
+from tinyweb.request import Request
+
 
 def log(param):
     def wrapper(cls, logger_class=ColoredLogger):
@@ -71,7 +74,14 @@ class ColoredLogger:
 
 
 class RequestLogger(ColoredLogger):
-    def log(self, message, status_code, *args, **kwargs):
+    def log(self, request: Request, status_code, *args, **kwargs):
+        message = C.REQUEST_LOG_TEMPLATE.format(
+            method=request.method.value,
+            path=request.path,
+            http_version=request.http_version,
+            status_code=status_code,
+        )
+
         if 100 <= status_code < 400:
             log_func = self.info
         elif 400 <= status_code < 500:

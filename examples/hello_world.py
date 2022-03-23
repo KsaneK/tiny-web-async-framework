@@ -14,4 +14,9 @@ def test_endpoint(request):
     return "Test status 201", 201
 
 
+@app.route("/test/500", methods=["GET"])
+def test_endpoint(request):
+    print("No return statement. I'm going to fail!")
+
+
 app.run()

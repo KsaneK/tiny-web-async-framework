@@ -1,4 +1,5 @@
 import asyncio
+import traceback
 from typing import List
 
 import tinyweb.constants as C
@@ -37,19 +38,20 @@ class TinyWeb:
         try:
             request = Request.parse(raw_request=raw_request)
         except Exception:
-            self.logger.error("Couldn't parse request")
+            traceback.print_exc()
             writer.close()
             return
 
         try:
-            func = self._routes.get_route(request.path, request.method)
+            func = self._routes.get_route(request.endpoint, request.method)
             response_obj = Response.from_result(func(request))
             response = response_obj.generate()
             status = response_obj.status_code
         except PageNotFoundException:
             response = generate_error_message(StatusCode.NOT_FOUND)
             status = StatusCode.NOT_FOUND
-        except Exception:
+        except Exception as exc:
+            traceback.print_exc()
             response = generate_error_message(StatusCode.INTERNAL_SERVER_ERROR)
             status = StatusCode.INTERNAL_SERVER_ERROR
 

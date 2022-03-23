@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Arguments</title>
+</head>
+<body>
+    {% for key, value in args.items() %}
+    <p>{{ key }} = {{ value }} (type {{ value.__class__.__name__ }})</p>
+    {% endfor %}
+</body>
+</html>

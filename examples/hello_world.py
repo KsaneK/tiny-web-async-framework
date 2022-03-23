@@ -19,4 +19,9 @@ def test_endpoint(request):
     print("No return statement. I'm going to fail!")
 
 
+@app.route("/test/args", methods=["GET"])
+def test_args(request):
+    return render("templates/arguments_template.html", context={"args": request.args})
+
+
 app.run()

@@ -1,11 +1,12 @@
 from tinyweb import TinyWeb
+from tinyweb.templates import render
 
 app = TinyWeb("localhost", 6820)
 
 
 @app.route("/hello_world", methods=["GET"])
 def hello_world(request):
-    return "<h1>Hello World!</h1>"
+    return render("templates/hello_world_template.html")
 
 
 @app.route("/test/endpoint", methods=["GET"])

@@ -34,6 +34,18 @@ class Response:
         self._headers = headers
         self._body = body
 
+    @property
+    def status_code(self) -> StatusCode:
+        return self._status_code
+
+    @property
+    def headers(self) -> Dict[str, str]:
+        return self._headers
+
+    @property
+    def body(self) -> str:
+        return self._body
+
     def generate(self):
         headers = {**DEFAULT_HEADERS, **self._headers, "Content-Length": len(self._body)}
 
@@ -48,7 +60,7 @@ class Response:
         return raw_response.encode(ENCODING)
 
     @staticmethod
-    def from_result(result):
+    def from_result(result) -> "Response":
         if isinstance(result, tuple):
             response, status_code = result
         else:

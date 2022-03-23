@@ -1,15 +1,16 @@
 import asyncio
-import os
 from typing import List
 
 import tinyweb.constants as C
 from tinyweb.exceptions import PageNotFoundException
+from tinyweb.logger import log, RequestLogger
 from tinyweb.request import Request, RequestMethod
 from tinyweb.response import Response, StatusCode
 from tinyweb.routes import Routes
 from tinyweb.utils import generate_error_message
 
 
+@log(RequestLogger)
 class TinyWeb:
     READ_CHUNK_SIZE = 16 * 1024
 
@@ -18,11 +19,11 @@ class TinyWeb:
         self._port = port
 
         self._server = None
-        self._loop = None
 
         self._routes = Routes()
 
     def run(self):
+        self.logger.info(f"Starting webserver on {self._host}:{self._port}...")
         asyncio.run(self._run_server())
 
     async def _run_server(self):
@@ -31,20 +32,47 @@ class TinyWeb:
             await self._server.serve_forever()
 
     async def _handle_request(self, reader, writer):
-        request_raw = ""
-        while not request_raw.endswith(2 * C.LINE_END):
-            request_raw += (await reader.read(TinyWeb.READ_CHUNK_SIZE)).decode(C.ENCODING)
+        raw_request = await self._read_http_request_from_stream(reader)
 
         try:
-            request = Request.parse(raw_request=request_raw)
-            func = self._routes.get_route(request.path, request.method)
-            response = Response.from_result(func(request))
-            writer.write(response.generate())
-        except PageNotFoundException:
-            writer.write(generate_error_message(StatusCode.NOT_FOUND))
+            request = Request.parse(raw_request=raw_request)
         except Exception:
-            writer.write(generate_error_message(StatusCode.INTERNAL_SERVER_ERROR))
+            self.logger.error("Couldn't parse request")
+            writer.close()
+            return
+
+        try:
+            func = self._routes.get_route(request.path, request.method)
+            response_obj = Response.from_result(func(request))
+            response = response_obj.generate()
+            status = response_obj.status_code
+        except PageNotFoundException:
+            response = generate_error_message(StatusCode.NOT_FOUND)
+            status = StatusCode.NOT_FOUND
+        except Exception:
+            response = generate_error_message(StatusCode.INTERNAL_SERVER_ERROR)
+            status = StatusCode.INTERNAL_SERVER_ERROR
+
+        self.logger.log(
+            C.REQUEST_LOG_TEMPLATE.format(
+                method=request.method.value,
+                path=request.path,
+                http_version=request.http_version,
+                status_code=status.value,
+            ),
+            status_code=status.value,
+        )
+
+        writer.write(response)
         writer.close()
+
+    @staticmethod
+    async def _read_http_request_from_stream(stream) -> str:
+        raw_request = ""
+        while not raw_request.endswith(2 * C.LINE_END):
+            raw_request += (await stream.read(TinyWeb.READ_CHUNK_SIZE)).decode(C.ENCODING)
+
+        return raw_request
 
     def route(self, path: str, methods: List[str]):
         def decorator(func):

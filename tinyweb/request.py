@@ -60,7 +60,39 @@ class Request:
         return json.loads(self._body)
 
     @staticmethod
-    def parse(raw_request: str):
+    def from_wsgi(environ: Dict[str, Any]) -> "Request":
+
+        method = RequestMethod(environ["REQUEST_METHOD"])
+        path = environ["REQUEST_URI"]
+        endpoint = environ["PATH_INFO"]
+        args = Request.parse_args(environ["QUERY_STRING"])
+        http_version = environ["SERVER_PROTOCOL"]
+        content_type = environ["CONTENT_TYPE"]
+        try:
+            content_length = int(environ.get("CONTENT_LENGTH", 0))
+        except ValueError:
+            content_length = 0
+        body = environ["wsgi.input"].read(content_length)
+
+        headers = {}
+
+        for key, value in environ.items():
+            if key.startswith("HTTP_"):
+                header_name = key.replace("_", " ")
+                headers[header_name] = value
+
+        return Request(
+            path=path,
+            endpoint=endpoint,
+            args=args,
+            method=method,
+            headers=headers,
+            body=body,
+            http_version=http_version,
+        )
+
+    @staticmethod
+    def from_raw_bytes(raw_request: str):
         headers = {}
         first_line, rest = raw_request.split(LINE_END, maxsplit=1)
         method, path, http_version = first_line.split(" ")
@@ -81,12 +113,18 @@ class Request:
         )
 
     @staticmethod
-    def parse_path_and_args(path: str) -> Tuple[str, Dict[str, Union[str, int, float]]]:
+    def parse_path_and_args(path: str) -> Tuple[str, Dict[str, Union[str, int, float, bool]]]:
         if "?" not in path:
             return path, {}
 
-        endpoint, args = path.split("?")
-        args = args.split("&")
+        endpoint, query_string = path.split("?")
+        args = Request.parse_args(query_string)
+
+        return endpoint, args
+
+    @staticmethod
+    def parse_args(query_string: str) -> Dict[str, Union[str, int, float, bool]]:
+        args = query_string.split("&")
 
         args_dict = {}
         for raw_arg in args:
@@ -103,7 +141,7 @@ class Request:
                     pass
             args_dict[key] = value
 
-        return endpoint, args_dict
+        return args_dict
 
     def __str__(self):
         return f"Request({self._method} {self.path})"

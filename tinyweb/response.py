@@ -40,7 +40,7 @@ class Response:
 
     @property
     def headers(self) -> Dict[str, str]:
-        return self._headers
+        return {**DEFAULT_HEADERS, **self._headers}
 
     @property
     def body(self) -> str:

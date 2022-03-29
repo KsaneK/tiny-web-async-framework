@@ -7,7 +7,7 @@ from tinyweb.templates import render
 ROOT_DIR = os.path.dirname(__file__)
 
 
-def generate_error_message(status_code: StatusCode):
+def generate_error_response(status_code: StatusCode) -> Response:
     error_message = status_code.get_name().capitalize()
     response = Response.from_result(
         (
@@ -20,4 +20,4 @@ def generate_error_message(status_code: StatusCode):
             status_code.value,
         )
     )
-    return response.generate()
+    return response
